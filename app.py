@@ -17,39 +17,48 @@ def index():
 
 @app.route('/segment', methods=['POST'])
 def segment():
-    if 'image' not in request.files:
-        return "No file uploaded", 400
+    try:
+        if 'image' not in request.files:
+            print("❌ No file in request.")
+            return "No file uploaded", 400
 
-    file = request.files['image']
-    filepath = os.path.join(UPLOAD_FOLDER, file.filename)
-    file.save(filepath)
-    print(f"✅ Uploaded: {filepath}")
+        file = request.files['image']
+        filepath = os.path.join(UPLOAD_FOLDER, file.filename)
+        file.save(filepath)
+        print(f"✅ Uploaded file saved at: {filepath}")
 
-    img_bgr = cv.imread(filepath)
-    if img_bgr is None:
-        return "Failed to read image", 500
+        img_bgr = cv.imread(filepath)
+        if img_bgr is None:
+            print("❌ Failed to read image with cv2.")
+            return "Failed to read image", 500
 
-    # Run segmentation
-    labels, vis = segment_graph(img_bgr, k=200.0, min_size=50)
+        print("⚙️ Running segmentation...")
+        labels, vis = segment_graph(img_bgr, k=200.0, min_size=50)
+        print(f"✅ Segmentation done! Labels shape: {labels.shape}, vis shape: {vis.shape}")
 
-    # Save smooth segmented image
-    smooth_path = os.path.join(OUTPUT_FOLDER, "segmented_smooth.png")
-    cv.imwrite(smooth_path, vis)
+        # Save smooth segmented image
+        smooth_path = os.path.join(OUTPUT_FOLDER, "segmented_smooth.png")
+        success1 = cv.imwrite(smooth_path, vis)
+        print(f"🖼 Smooth saved: {success1} at {smooth_path}")
 
-    # Create and save random color map
-    unique_labels = np.unique(labels)
-    color_map = np.random.randint(0, 255, (len(unique_labels), 3), dtype=np.uint8)
-    random_colored = color_map[labels]
-    random_path = os.path.join(OUTPUT_FOLDER, "segmented_random.png")
-    cv.imwrite(random_path, random_colored)
+        # Create and save random color map
+        unique_labels = np.unique(labels)
+        color_map = np.random.randint(0, 255, (len(unique_labels), 3), dtype=np.uint8)
+        random_colored = color_map[labels]
+        random_path = os.path.join(OUTPUT_FOLDER, "segmented_random.png")
+        success2 = cv.imwrite(random_path, random_colored)
+        print(f"🎨 Random color map saved: {success2} at {random_path}")
 
-    print("✅ Saved both images!")
+        return jsonify({
+            "smooth": "/outputs/segmented_smooth.png",
+            "random": "/outputs/segmented_random.png"
+        })
 
-    # Return both paths
-    return jsonify({
-        "smooth": "/outputs/segmented_smooth.png",
-        "random": "/outputs/segmented_random.png"
-    })
+    except Exception as e:
+        import traceback
+        print("❌ Error during segmentation:", e)
+        traceback.print_exc()
+        return f"Segmentation failed: {e}", 500
 
 # Allow Flask to serve files from outputs/
 @app.route('/outputs/<path:filename>')
