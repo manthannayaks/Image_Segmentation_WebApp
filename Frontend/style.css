@@ -1,0 +1,261 @@
+body {
+  font-family: 'Poppins', sans-serif;
+  min-height: 100vh;
+  margin: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: linear-gradient(270deg, #232526, #414345, #6a11cb, #2575fc);
+  background-size: 800% 800%;
+  animation: gradientShift 15s ease infinite;
+}
+@keyframes gradientShift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+.dashboard {
+  max-width: 1200px;
+  width: 95vw;
+  min-height: 80vh;;
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 10px 30px rgba(38, 50, 56, 0.12);
+  padding: 48px 32px;
+  display: flex;
+  flex-direction: column;
+  animation: fadeIn 1s ease;
+  background-color: skyblue;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(40px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.dashboard-header {
+  text-align: center;
+  padding-bottom: 24px;
+  border-bottom: 1px solid #ececec;
+}
+
+.dashboard-header h1 {
+  margin: 0 0 10px;
+  font-size: 2.5rem;
+  color: #232526;
+  font-weight: 700;
+  letter-spacing: 1px;
+}
+
+.dashboard-header p {
+  font-size: 1.2rem;
+  color: #555;
+}
+
+.dashboard-main {
+  margin-top: 10px;
+}
+
+.styled-form {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  margin-bottom: 34px;
+  justify-content: center;
+}
+
+.custom-file-upload {
+  position: relative;
+  display: inline-block;
+  padding: 10px 20px;
+  cursor: pointer;
+  color: #fff;
+  background: linear-gradient(90deg, #6a11cb, #2575fc);
+  border-radius: 8px;
+  font-weight: 600;
+  transition: background 0.3s;
+}
+
+.custom-file-upload:hover {
+  background: linear-gradient(90deg, #2575fc, #6a11cb);
+}
+
+.custom-file-upload input[type="file"] {
+  display: none;
+}
+
+.segment-btn {
+  position: relative;
+  background: linear-gradient(90deg, #ff512f, #dd2476);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 13px 32px;
+  cursor: pointer;
+  font-weight: 700;
+  font-size: 1.12rem;
+  overflow: hidden;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+.segment-btn::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -75%;
+  width: 50%;
+  height: 100%;
+  background: rgba(255, 255, 255, 0.2);
+  transform: skewX(-20deg);
+  transition: 0.5s;
+}
+.segment-btn:hover::after {
+  left: 125%;
+  transition: 0.8s;
+}
+
+.results-section h3 {
+  color: #232526;
+  margin-bottom: 20px;
+  font-size: 1.4rem;
+  font-weight: 600;
+}
+
+.image-pair {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 36px;
+  justify-content: center;
+  align-items: flex-start;
+  
+}
+
+.image-pair > div {
+  background: #f8fafc;
+  border-radius: 12px;
+  box-shadow: 0 6px 18px rgba(56, 80, 145, 0.08);
+  padding: 12px;
+  min-width: 250px;
+  transition: box-shadow 0.4s;
+  font-size: 1.3rem;
+  text-align: center;
+}
+
+.image-pair > div:hover {
+  box-shadow: 0 12px 22px rgba(56, 80, 145, 0.18);
+}
+
+.dashboard-img {
+  display: block;
+  width: 320px;
+  max-width: 100%;
+  border-radius: 10px;
+  margin-top: 14px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+  transition: opacity 0.5s ease, transform 0.3s;
+  opacity: 0;
+  text-align: center;
+}
+.dashboard-img[src] {
+  opacity: 1;
+}
+
+@media (max-width: 768px) {
+  .dashboard { padding: 28px 8px; }
+  .image-pair { gap: 20px; }
+  .dashboard-img { width: 140px; }
+}
+
+@media (max-width: 480px) {
+  body { padding: 0; }
+  .dashboard { padding: 10px 2px; }
+  .dashboard-header h1 { font-size: 1.5rem; }
+  .styled-form { flex-direction: column; gap: 10px; }
+  .image-pair { flex-direction: column; gap: 15px; }
+  .dashboard-img { width: 99vw; }
+}
+
+.spinner {
+  border: 4px solid #f3f3f3;
+  border-top: 4px solid #ff512f;
+  border-radius: 50%;
+  width: 30px;
+  height: 30px;
+  animation: spin 1s linear infinite;
+  margin: auto;
+}
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.toast {
+position: fixed;
+bottom: 20px;
+right: 20px;
+background: #4CAF50;
+color: white;
+padding: 10px 20px;
+border-radius: 8px;
+box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+z-index: 9999;
+font-weight: bold;
+opacity: 1;
+transition: opacity 0.5s ease;
+}
+
+#status-message {
+font-size: 1.3rem;
+font-weight: 600;
+margin-top: 10px;
+color: #4CAF50;
+display: none;
+transition: opacity 0.5s ease;
+text-align: center;
+}
+
+/* Fade-in effect for images */
+.dashboard-img {
+opacity: 0;
+transform: translateY(20px);
+transition: opacity 0.6s ease, transform 0.6s ease;
+}
+.dashboard-img[src] {
+opacity: 1;
+transform: translateY(0);
+}
+
+/* Hover animation for image containers */
+.image-pair > div:hover {
+transform: translateY(-5px);
+transition: transform 0.3s ease, box-shadow 0.4s ease;
+}
+
+/* Smooth hover for buttons */
+.segment-btn:hover {
+transform: translateY(-3px);
+box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+/* Bounce-in for output section when results appear */
+#output-section {
+opacity: 0;
+transform: scale(0.95);
+transition: opacity 0.5s ease, transform 0.5s ease;
+}
+#output-section.show {
+opacity: 1;
+transform: scale(1);
+}
+
+/* Smooth status message fade-in */
+#status-message {
+opacity: 0;
+transform: translateY(-10px);
+transition: opacity 0.5s ease, transform 0.5s ease;
+}
+#status-message.show {
+opacity: 1;
+transform: translateY(0);
+}

@@ -1,71 +1,64 @@
-from flask import Flask, render_template, request, jsonify, send_from_directory
+from flask import Flask, request, jsonify, send_from_directory
+import os
 import cv2 as cv
 import numpy as np
-import os
-from hi import segment_graph
+from main import segment_graph, random_color_segments  # from main.py logic
 
 app = Flask(__name__)
 
-UPLOAD_FOLDER = 'uploads'
-OUTPUT_FOLDER = 'outputs'
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+UPLOAD_FOLDER = os.path.join(BASE_DIR, "uploads")
+OUTPUT_FOLDER = os.path.join(BASE_DIR, "outputs")
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 os.makedirs(OUTPUT_FOLDER, exist_ok=True)
 
-@app.route('/')
-def index():
-    return render_template('index.html')
-
 @app.route('/segment', methods=['POST'])
-def segment():
-    try:
-        if 'image' not in request.files:
-            print("❌ No file in request.")
-            return "No file uploaded", 400
+def segment_image():
+    file = request.files['image']
+    if not file:
+        return jsonify({"error": "No file uploaded"}), 400
 
-        file = request.files['image']
-        filepath = os.path.join(UPLOAD_FOLDER, file.filename)
-        file.save(filepath)
-        print(f"✅ Uploaded file saved at: {filepath}")
+    # Save uploaded image
+    path = os.path.join(UPLOAD_FOLDER, file.filename)
+    file.save(path)
 
-        img_bgr = cv.imread(filepath)
-        if img_bgr is None:
-            print("❌ Failed to read image with cv2.")
-            return "Failed to read image", 500
+    print("Saved path:", path)
+    print("File exists:", os.path.exists(path))
+    # Read image
+    img = cv.imread(path)
+    if img is None:
+        return jsonify({"error": "Invalid image file"}), 400
 
-        print("⚙️ Running segmentation...")
-        labels, vis = segment_graph(img_bgr, k=200.0, min_size=50)
-        print(f"✅ Segmentation done! Labels shape: {labels.shape}, vis shape: {vis.shape}")
+    # Segment
+    labels, vis = segment_graph(img,min_size=50,connectivity=8,mean_threshold=20)
+    rand_vis = random_color_segments(labels)
 
-        # Save smooth segmented image
-        smooth_path = os.path.join(OUTPUT_FOLDER, "segmented_smooth.png")
-        success1 = cv.imwrite(smooth_path, vis)
-        print(f"🖼 Smooth saved: {success1} at {smooth_path}")
+    # Save results
+    smooth_path = os.path.join(OUTPUT_FOLDER, "smooth_" + file.filename)
+    random_path = os.path.join(OUTPUT_FOLDER, "random_" + file.filename)
+    cv.imwrite(smooth_path, vis)
+    cv.imwrite(random_path, rand_vis)
 
-        # Create and save random color map
-        unique_labels = np.unique(labels)
-        color_map = np.random.randint(0, 255, (len(unique_labels), 3), dtype=np.uint8)
-        random_colored = color_map[labels]
-        random_path = os.path.join(OUTPUT_FOLDER, "segmented_random.png")
-        success2 = cv.imwrite(random_path, random_colored)
-        print(f"🎨 Random color map saved: {success2} at {random_path}")
+    return jsonify({
+    "smooth": f"http://127.0.0.1:5000/outputs/smooth_{file.filename}",
+    "random": f"http://127.0.0.1:5000/outputs/random_{file.filename}"
+})
 
-        return jsonify({
-            "smooth": "/outputs/segmented_smooth.png",
-            "random": "/outputs/segmented_random.png"
-        })
+@app.route('/uploads/<filename>')
+def serve_uploaded(filename):
+    return send_from_directory(UPLOAD_FOLDER, filename)
 
-    except Exception as e:
-        import traceback
-        print("❌ Error during segmentation:", e)
-        traceback.print_exc()
-        return f"Segmentation failed: {e}", 500
-
-# Allow Flask to serve files from outputs/
-@app.route('/outputs/<path:filename>')
+@app.route('/outputs/<filename>')
 def serve_output(filename):
     return send_from_directory(OUTPUT_FOLDER, filename)
 
+@app.route('/')
+def home():
+    return send_from_directory(os.path.join(BASE_DIR, 'Frontend'), 'index.html')
+
+@app.route('/<path:path>')
+def static_files(path):
+    return send_from_directory(os.path.join(BASE_DIR, 'Frontend'), path)
+
 if __name__ == '__main__':
-    import os
-    port = int(os.environ.get('PORT', 5000))
-    app.run(host='0.0.0.0', port=port, debug=True)
+    app.run(debug=True)
