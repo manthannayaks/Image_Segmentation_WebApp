@@ -40,9 +40,9 @@ def segment_image():
     cv.imwrite(random_path, rand_vis)
 
     return jsonify({
-    "smooth": f"http://127.0.0.1:5000/outputs/smooth_{file.filename}",
-    "random": f"http://127.0.0.1:5000/outputs/random_{file.filename}"
-})
+        "smooth": f"/outputs/smooth_{file.filename}",
+        "random": f"/outputs/random_{file.filename}"
+    })
 
 @app.route('/uploads/<filename>')
 def serve_uploaded(filename):
