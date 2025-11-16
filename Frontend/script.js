@@ -21,6 +21,7 @@ imageInput.addEventListener('change', () => {
 
 form.addEventListener('submit', async (e) => {
     e.preventDefault();
+
     const file = imageInput.files[0];
     if (!file) return alert("Please select an image first.");
 
@@ -30,90 +31,93 @@ form.addEventListener('submit', async (e) => {
     const statusMessage = document.getElementById('status-message');
     const progressBar = document.getElementById('progress-bar');
     const progressText = document.getElementById('progress-text');
-    
-    // Reset status message and progress
-    statusMessage.style.display = 'none';
-    statusMessage.innerText = '';
+
+    // Reset UI
+    statusMessage.style.display = 'block';
+    statusMessage.style.color = '#ff9800';
+    statusMessage.innerText = 'Processing Image...';
     progressBar.style.width = '0%';
     progressText.innerText = 'Processing 0%';
-    statusMessage.classList.remove('show');
-    
-    // Disable the button and show loading text
     button.disabled = true;
     button.innerText = "Processing...";
     button.style.opacity = "0.6";
-
-    const formData = new FormData();
-    formData.append('image', file);
 
     const spinner = document.getElementById('loading-spinner');
     spinner.style.display = "block";
 
     const progressContainer = document.getElementById('progress-container');
     progressContainer.style.display = "block";
+
+    // Fake progress animation
     let progress = 0;
     const interval = setInterval(() => {
-        if (progress < 90) {
+        if (progress < 95) {
             progress += Math.floor(Math.random() * 10);
-            if (progress > 90) progress = 90;
+            if (progress > 95) progress = 95;
             progressBar.style.width = `${progress}%`;
             progressText.innerText = `Processing ${progress}%`;
         }
-    }, 600);
-
-    statusMessage.style.display = 'block';
-    statusMessage.style.color = '#ff9800';
-    statusMessage.innerText = 'Processing Image...';
-    statusMessage.classList.add('show');
+    }, 500);
 
     try {
-        const response = await fetch('http://127.0.0.1:5000/segment', {
-            method: 'POST',
-            body: formData
+        // Wait for OpenCV
+        if (typeof cv === 'undefined' || !cv.getBuildInformation) {
+            statusMessage.innerText = 'Waiting for OpenCV to load...';
+            await new Promise(resolve => {
+                const check = setInterval(() => {
+                    if (cv && cv.getBuildInformation) {
+                        clearInterval(check);
+                        resolve();
+                    }
+                }, 50);
+            });
+        }
+
+        // Load image from file into cv.Mat
+        const img = new Image();
+        img.src = URL.createObjectURL(file);
+
+        await new Promise(res => img.onload = res);
+
+        const canvas = document.createElement("canvas");
+        canvas.width = img.width;
+        canvas.height = img.height;
+        const ctx = canvas.getContext("2d");
+        ctx.drawImage(img, 0, 0);
+
+        let mat = cv.imread(canvas);
+
+        // ⭐ Call your segmentation function (from segment.js)
+        const result = await segmentImage(mat, {
+            minSize: 50,
+            connectivity: 4,
+            meanThreshold: 20
         });
 
-        if (response.ok) {
-            const data = await response.json();
-            clearInterval(interval);
-            progressBar.style.width = "100%";
-            progressText.innerText = "Processing 100% - Done ✅";
-            smoothImg.src = data.smooth + '?t=' + new Date().getTime();
-            randomImg.src = data.random + '?t=' + new Date().getTime();
+        // Show results
+        smoothImg.src = result.meanCanvas.toDataURL();
+        randomImg.src = result.randomCanvas.toDataURL();
 
-            statusMessage.style.display = 'block';
-            statusMessage.style.color = '#4CAF50';
-            statusMessage.innerText = 'Segmentation Completed Successfully ✅';
-            statusMessage.classList.add('show');
-            document.getElementById('output-section').classList.add('show');
+        clearInterval(interval);
+        progressBar.style.width = "100%";
+        progressText.innerText = "Processing 100% - Done ✅";
 
-            // ✅ Show toast notification
-            const toast = document.createElement('div');
-            toast.classList.add('toast');
-            toast.innerText = "Segmentation Completed Successfully!";
-            document.body.appendChild(toast);
+        statusMessage.style.color = '#4CAF50';
+        statusMessage.innerText = 'Segmentation Completed Successfully ✅';
 
-            // Fade out toast after a few seconds
-            setTimeout(() => {
-                toast.style.opacity = '0';
-                setTimeout(() => toast.remove(), 500);
-            }, 2500);
-        } else {
-            // Removed alert here as per instructions
-        }
+        // Cleanup
+        mat.delete();
+
     } catch (error) {
-        statusMessage.style.display = 'block';
+        console.error(error);
         statusMessage.style.color = '#f44336';
         statusMessage.innerText = 'Error: Segmentation Failed ❌';
-        statusMessage.classList.add('show');
-
-        // Removed alert here as per instructions
     }
 
     clearInterval(interval);
-    progressContainer.style.display = "none";
     spinner.style.display = "none";
-    
-    // Re-enable the button
+    progressContainer.style.display = "none";
+
     button.disabled = false;
     button.innerText = originalText;
     button.style.opacity = "1";
